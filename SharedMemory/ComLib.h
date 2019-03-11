@@ -1,11 +1,14 @@
+#pragma once
 #include <Windows.h>
 #include <string>
 #include "SharedMemoryBuffer.h"
 #include <mutex>
 #include <tchar.h>
+#include <optional>
 
 #define MB 1000000
 typedef SharedMemoryBuffer SharedMemory;
+
 class ComLib
 {
 private:
@@ -59,8 +62,9 @@ public:
 		Should never return DUMMY messages.
 	*/
 	bool recv(char * msg, size_t & length);
+
 	/* return the length of the next message */
-	size_t nextSize();
+	std::optional<size_t> nextSize();
 
 	/* disconnect and destroy all resources */
 	~ComLib();

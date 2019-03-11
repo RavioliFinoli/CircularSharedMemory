@@ -5,6 +5,8 @@
 #define RETURN_SAFE_FALSE RETURN_UNLOCK_FALSE(hnd_Mutex)
 #define RETURN_SAFE_TRUE RETURN_UNLOCK_TRUE(hnd_Mutex)
 
+#define UNLOCK(x) ReleaseMutex(x)
+
 // -------------------- [ Utility functions ] --------------------
 
 bool MessageFits(size_t head, size_t tail, size_t bufferSize, size_t messageSize)
@@ -336,11 +338,62 @@ bool ComLib::isConnected()
 	///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 }
 
-size_t ComLib::nextSize()
+std::optional<size_t> ComLib::nextSize()
 {
+
+	WaitForSingleObject(hnd_Mutex, INFINITE);
+
+	this->head = GetHead();
+
+	//Create pointer from where we will start recieving 
+	char* pByte = (char*)this->pRingBuffer + tail;
+
+	//Determine if head is in front of tail
+	bool headIsInFront = (head >= tail);
+
+	//Determine how much memory is left in the buffer
+	size_t sizeToEOB = ringBufferSize - tail;
+
+	//Determine how much memory is left until head
+	size_t sizeToHead;
+	headIsInFront ? sizeToHead = head - tail : sizeToHead = ringBufferSize - tail + head;
+
+	//Recieve header if there is space for it.
+	Header hdr;
+	if (sizeToHead >= sizeof(Header) && sizeToEOB >= sizeof(Header))
+	{
+		CopyMemory(&hdr, pByte, sizeof(Header));
+		pByte += sizeof(Header);
+
+		UNLOCK(hnd_Mutex);
+		return hdr.msgLength;
+	}
+
+	//If the remaining memory cant hold a Header, 
+	//roll back to 0.
+	else if (sizeToEOB < sizeof(Header))
+	{
+		//Make sure head is not in front (it should never be, however)
+		if (!headIsInFront)
+		{
+			tail = 0;
+			UpdateRBD(tail);
+			UNLOCK(hnd_Mutex);
+			return std::nullopt;
+		}
+		else
+		{
+			UNLOCK(hnd_Mutex);
+			return std::nullopt;
+		}
+	}
 	///+-+-+-+-+-+-+-+-+-+-+-+
-	//nah
-	return size_t();
+	else
+	{
+		UNLOCK(hnd_Mutex);
+		return std::nullopt;
+	}
+	///+-+-+-+-+-+-+-+-+-+-+-+
 	///+-+-+-+-+-+-+-+-+-+-+-+
 }
 
