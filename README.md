@@ -1,4 +1,4 @@
-<h1><img src="https://i.imgur.com/h8PeeSf.png">Circular Buffer</h1>
+<h1><img src="https://i.imgur.com/tpppUDL.png">Circular Buffer</h1>
 
 A library for sharing data between applications using a circular buffer.
 
