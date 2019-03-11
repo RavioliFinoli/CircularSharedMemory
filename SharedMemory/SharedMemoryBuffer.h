@@ -33,7 +33,7 @@ public:
 	*_in_	void*	data
 	*_in_	size_t	length
 	*Assumes enough space in buffer.*/
-	bool Send(const size_t, const PVOID data, const size_t& size);
+	bool Send(const size_t, const PVOID data, const size_t& size) const;
 
 	/**
 	*_out_	void*	dest
@@ -45,9 +45,9 @@ public:
 	*_out_	void*	dest
 	*_in_	size_t	bytesIntoBuffer
 	*_in_	size_t	size*/
-	bool Recieve(PVOID dest, const size_t bytesIntoBuffer, const size_t& size);
+	bool Recieve(PVOID dest, const size_t bytesIntoBuffer, const size_t& size) const;
 
-	char* GetBuffer();
+	char* GetBuffer() const;
 
 	~SharedMemoryBuffer();
 };

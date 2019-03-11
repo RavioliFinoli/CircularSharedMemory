@@ -39,7 +39,7 @@ char * SharedMemoryBuffer::Init(std::string name, size_t bufferSize)
 			0
 		);
 	}
-	return this->GetBuffer();
+	return GetBuffer();
 }
 
 bool SharedMemoryBuffer::Send(const PVOID& dest, const PVOID data, const size_t & size)
@@ -52,7 +52,7 @@ bool SharedMemoryBuffer::Send(const PVOID& dest, const PVOID data, const size_t 
 	return success;
 }
 
-bool SharedMemoryBuffer::Send(const size_t bytesIntoBuffer, const PVOID data, const size_t & size)
+bool SharedMemoryBuffer::Send(const size_t bytesIntoBuffer, const PVOID data, const size_t & size) const
 {
 	bool success = true;
 	if (CopyMemory((char*)(this->pBuf + bytesIntoBuffer), data, size) == nullptr)
@@ -68,7 +68,7 @@ bool SharedMemoryBuffer::Recieve(PVOID dest, const PVOID buf, const size_t& size
 	return success;
 }
 
-bool SharedMemoryBuffer::Recieve(PVOID dest, const size_t bytesIntoBuffer, const size_t& size)
+bool SharedMemoryBuffer::Recieve(PVOID dest, const size_t bytesIntoBuffer, const size_t& size) const
 {
 	bool success = true;
 	if (CopyMemory(dest, (char*)(this->pBuf + bytesIntoBuffer), size) == nullptr)
@@ -76,7 +76,7 @@ bool SharedMemoryBuffer::Recieve(PVOID dest, const size_t bytesIntoBuffer, const
 	return success;
 }
 
-char * SharedMemoryBuffer::GetBuffer()
+char * SharedMemoryBuffer::GetBuffer() const
 {
 	//Returns pBuf as char *
 	PCHAR p = (PCHAR)pBuf;

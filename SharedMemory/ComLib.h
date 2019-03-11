@@ -20,23 +20,24 @@ private:
 
 	/**
 	 * Updates head/tail with value, depending on if consumer or producer.*/
-	void UpdateRBD(size_t value);
+	void UpdateRBD(size_t value) const;
 
 	/**
 	 * Get circular buffer tail.*/
-	size_t GetTail();
+	size_t GetTail() const;
 
 	/**
 	 * Get circular buffer head.*/
-	size_t GetHead();
+	size_t GetHead() const;
 
 	/**
 	 * Pointer to the start of the circular buffer.*/
 	PVOID pRingBuffer;
 public:
-	enum TYPE{ PRODUCER, CONSUMER }type;
+	enum TYPE{ PRODUCER, CONSUMER };
 	enum MSG_TYPE{ NORMAL, DUMMY };
 
+	const TYPE type;
 	/**
 	 * Message header.*/
 	struct Header
@@ -52,7 +53,7 @@ public:
 
 	/**
 	 * Check status.*/
-	bool isConnected();
+	bool isConnected() const;
 
 	/**
 	 * Returns "true" if data was sent successfully.

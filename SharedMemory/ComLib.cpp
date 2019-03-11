@@ -30,11 +30,11 @@ ComLib::Header CreateHeader(size_t type, size_t length /*incl null-T*/)
 	return header;
 }
 
-void ComLib::UpdateRBD(size_t value)
+void ComLib::UpdateRBD(size_t value) const
 {
 	//Check who wants to update; producer and consumer can only update
 	//their respective value (head/tail)
-	if (this->type == ComLib::TYPE::PRODUCER)
+	if (type == ComLib::TYPE::PRODUCER)
 	{
 		CopyMemory((PVOID)ringBufferData.GetBuffer(), &value, sizeof(size_t)); //First slot is head
 	}
@@ -44,7 +44,7 @@ void ComLib::UpdateRBD(size_t value)
 	}
 }
 
-size_t ComLib::GetTail()
+size_t ComLib::GetTail() const
 {
 	//Retrieve tail from RBD
 	size_t r;
@@ -52,7 +52,7 @@ size_t ComLib::GetTail()
 	return r;
 }
 
-size_t ComLib::GetHead()
+size_t ComLib::GetHead() const
 {
 	//Retrieve head from RBD
 	size_t r;
@@ -61,7 +61,7 @@ size_t ComLib::GetHead()
 }
 
 
-bool ComLib::isConnected()
+bool ComLib::isConnected() const
 {
 	//Check if buffers are initialized
 	return (ringBuffer.GetBuffer() != nullptr && ringBufferData.GetBuffer() != nullptr);
@@ -72,36 +72,30 @@ bool ComLib::isConnected()
 #pragma region "Constructor/Destructor"
 
 ComLib::ComLib(const std::string& secret, const size_t& buffSize, TYPE type)
+	: type(type), head(0), tail(0), ringBufferSize(buffSize)
 {
-	//Initialize POD members
-	this->type = type;
-	this->head = this->tail = 0;
-	this->ringBufferSize = buffSize;
-
 	//Convert string to wide string
 	std::wstring widestr = std::wstring(secret.begin(), secret.end());
 
 	//Initialize ring buffer
-	this->ringBuffer.Init(secret, buffSize);
-	this->pRingBuffer = (PVOID)ringBuffer.GetBuffer(); //Not used
+	pRingBuffer = (PVOID)ringBuffer.Init(secret, buffSize);
 
-	//ringBufferData holds space for head and tail (size_t)
+	//ringBufferData holds space for head and tail (2x size_t)
 	//File Map is called RBD (RingBufferData)
-	this->ringBufferData.Init("RBD", sizeof(size_t) * 2);
+	ringBufferData.Init("RBD", sizeof(size_t) * 2);
 
 	//Initialize RBD and Create mutex, if we are the producer
 	{
-		if (this->type == PRODUCER)
+		if (type == PRODUCER)
 		{
-			this->hnd_Mutex = CreateMutex(NULL, FALSE, _T("comlibmtx"));
-			CopyMemory(this->ringBufferData.GetBuffer(), &this->head, sizeof(size_t));
-			CopyMemory(this->ringBufferData.GetBuffer() + sizeof(size_t), &this->tail, sizeof(size_t));
+			hnd_Mutex = CreateMutex(NULL, FALSE, _T("comlibmtx"));
+			CopyMemory(ringBufferData.GetBuffer(), &this->head, sizeof(size_t));
+			CopyMemory(ringBufferData.GetBuffer() + sizeof(size_t), &tail, sizeof(size_t));
 		}
 		//If we are not the producer, open the mutex instead
 		else
-			this->hnd_Mutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, _T("comlibmtx"));
+			hnd_Mutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, _T("comlibmtx"));
 	}
-
 }
 
 ComLib::~ComLib()
@@ -118,7 +112,7 @@ bool ComLib::send(const void * msg, const size_t length)
 	WaitForSingleObject(hnd_Mutex, INFINITE);
 
 	//Get latest tail
-	this->tail = this->GetTail();
+	tail = GetTail();
 
 	//determine if tail is behind head in memory
 	bool tailIsBehind = (tail < head);
@@ -145,15 +139,15 @@ bool ComLib::send(const void * msg, const size_t length)
 
 		auto hdr = CreateHeader(1, length);
 		char* cpMsg = (char*)msg;
-		char* pByte = (char*)this->pRingBuffer + head;
+		char* pByte = (char*)pRingBuffer + head;
 
 		//Send header and advance head
-		this->ringBuffer.Send(pByte, (PVOID)&hdr, sizeof(hdr));
+		ringBuffer.Send(pByte, (PVOID)&hdr, sizeof(hdr));
 		pByte += sizeof(hdr);
 
 		//send message
-		this->ringBuffer.Send(pByte, cpMsg, length);
-		head = (head + _length) % this->ringBufferSize;
+		ringBuffer.Send(pByte, cpMsg, length);
+		head = (head + _length) % ringBufferSize;
 
 		//MString string = "Message sent. New head: ";
 		//string += (unsigned int)head;
@@ -182,11 +176,11 @@ bool ComLib::send(const void * msg, const size_t length)
 		if (sizeToEOB >= sizeof(Header))
 		{
 			auto hdr = CreateHeader(0, ringBufferSize - head);
-			this->ringBuffer.Send(ringBuffer.GetBuffer() + head, (PVOID)&hdr, sizeof(hdr));
+			ringBuffer.Send(ringBuffer.GetBuffer() + head, (PVOID)&hdr, sizeof(hdr));
 		}
 		memset(ringBuffer.GetBuffer() + head, 0, ringBufferSize - head);
 		head = 0;
-		this->UpdateRBD(head);
+		UpdateRBD(head);
 		RETURN_SAFE_FALSE;
 	}
 
@@ -194,7 +188,7 @@ bool ComLib::send(const void * msg, const size_t length)
 	else if (tailIsBehind && sizeToEOB < sizeof(Header) && tail > 0)
 	{
 		head = 0;
-		this->UpdateRBD(head);
+		UpdateRBD(head);
 		RETURN_SAFE_FALSE;
 	}
 
