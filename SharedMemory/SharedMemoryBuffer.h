@@ -10,13 +10,9 @@ class SharedMemoryBuffer
 	size_t bufferSize;
 	
 public:
-	void DebugPrintAdress();
-
 
 	SharedMemoryBuffer();
 	SharedMemoryBuffer(std::string name, size_t bufferSize);
-	char* Init(std::string name, size_t bufferSize);
-	//char* Init(const wchar_t* name, size_t bufferSize);
 
 	/*
 	_in_	void*	dest

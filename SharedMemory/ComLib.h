@@ -6,34 +6,39 @@
 #include <tchar.h>
 #include <optional>
 
-#define MB 1000000
-typedef SharedMemoryBuffer SharedMemory;
-
 class ComLib
 {
 private:
-//+-+-+- Buffers -+-+-+
-	SharedMemory ringBuffer;
-	SharedMemory ringBufferData;
+	SharedMemoryBuffer ringBuffer;
+	SharedMemoryBuffer ringBufferData;
 
-//+-+-+- Mutex -+-+-+
 	HANDLE hnd_Mutex;
 
-//+-+-+- POD members -+-+-+
 	size_t ringBufferSize;
 	size_t head;
 	size_t tail;
 
-//+-+-+- Private functions -+-+-+
+	/**
+	 * Updates head/tail with value, depending on if consumer or producer.*/
 	void UpdateRBD(size_t value);
+
+	/**
+	 * Get circular buffer tail.*/
 	size_t GetTail();
+
+	/**
+	 * Get circular buffer head.*/
 	size_t GetHead();
 
-
-	PVOID pRingBuffer; //?
+	/**
+	 * Pointer to the start of the circular buffer.*/
+	PVOID pRingBuffer;
 public:
 	enum TYPE{ PRODUCER, CONSUMER }type;
 	enum MSG_TYPE{ NORMAL, DUMMY };
+
+	/**
+	 * Message header.*/
 	struct Header
 	{
 		size_t msgId;
@@ -41,32 +46,33 @@ public:
 		size_t msgLength;
 	};
 
-	// create a ComLib
+	/**
+	* Create a ComLib.*/
 	ComLib(const std::string& secret, const size_t& buffSize, TYPE type);
 
-	// init and check status
-	bool connect();
+	/**
+	 * Check status.*/
 	bool isConnected();
 
-	// returns "true" if data was sent successfully.
-	// false if for any reason the data could not be sent.
+	/**
+	 * Returns "true" if data was sent successfully.
+	 * Returns alse if for any reason the data could not be sent.*/
 	bool send(const void * msg, const size_t length);
 
 
-	/*
-		returns: "true" if a message was received.
-				 "false" if there is nothing to read.
-		"msg" is expected to have enough space, use "nextSize" to
-		check this and allocate if needed, but outside ComLib.
-		length should indicate the length of the data read.
-		Should never return DUMMY messages.
-	*/
+	/**
+	*	Returns true if a message was received, false if we cannot read. (no message to read, for example)
+	*   'msg' is expected to have enough space, use "nextSize" to check this and allocate as needed.
+	*	Length indicates the data read, in case the user does not check ahead of time.
+	*	Should never return DUMMY messages.*/
 	bool recv(char * msg, size_t & length);
 
-	/* return the length of the next message */
+	/** 
+	* Returns the length of the next message.*/
 	std::optional<size_t> nextSize();
 
-	/* disconnect and destroy all resources */
+	/**
+	* Disconnect and destroy all resources. */
 	~ComLib();
 };
 
