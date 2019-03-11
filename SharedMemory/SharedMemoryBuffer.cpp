@@ -1,33 +1,33 @@
 #include "SharedMemoryBuffer.h"
 
 SharedMemoryBuffer::SharedMemoryBuffer()
-{
-}
+{}
 
-SharedMemoryBuffer::SharedMemoryBuffer(std::string name, size_t bufferSize)
+char * SharedMemoryBuffer::Init(std::string name, size_t bufferSize)
 {
-	//Attempt to open first
+	std::wstring widestr = std::wstring(name.begin(), name.end());
+	//Attempt to open first, since it could already be created
 	FileMapHandle = OpenFileMapping(
 		FILE_MAP_ALL_ACCESS,   // read/write access
 		FALSE,                 // do not inherit the name
-		_T("default"));        // name of mapping object
+		name.c_str());               // name of mapping object
 
 	//if NULL, File Mapping doesnt exist; create it.
 	if (FileMapHandle == NULL)
 	{
-			FileMapHandle =
-		CreateFileMapping(INVALID_HANDLE_VALUE,
-			NULL,
-			PAGE_READWRITE,
-			0,
-			bufferSize,
-			_T(name.c_str()));
+		FileMapHandle =
+			CreateFileMapping(INVALID_HANDLE_VALUE,
+				NULL,
+				PAGE_READWRITE,
+				0,
+				bufferSize,
+				name.c_str());
 
-			pBuf = (char*)MapViewOfFile(FileMapHandle, // handle to map object
-				FILE_MAP_ALL_ACCESS,  // read/write permission
-				0,
-				0,
-				bufferSize);
+		pBuf = (char*)MapViewOfFile(FileMapHandle, // handle to map object
+			FILE_MAP_ALL_ACCESS,  // read/write permission
+			0,
+			0,
+			bufferSize);
 	}
 	else //File Mapping successfully opened; Map view.
 	{
@@ -39,12 +39,13 @@ SharedMemoryBuffer::SharedMemoryBuffer(std::string name, size_t bufferSize)
 			0
 		);
 	}
+	return this->GetBuffer();
 }
 
 bool SharedMemoryBuffer::Send(const PVOID& dest, const PVOID data, const size_t & size)
 {
-	//Copies memory from data to dest
-	char* msg = (PCHAR)data;
+	//Copies memory from data to dest; perhaps should only send to this->pBuf TODO
+	PCHAR msg = (PCHAR)data;
 	bool success = true;
 	if (CopyMemory(dest, msg, size) == nullptr)
 		success = false;
@@ -78,7 +79,7 @@ bool SharedMemoryBuffer::Recieve(PVOID dest, const size_t bytesIntoBuffer, const
 char * SharedMemoryBuffer::GetBuffer()
 {
 	//Returns pBuf as char *
-	char* p = (char*)pBuf;
+	PCHAR p = (PCHAR)pBuf;
 	return p;
 }
 
