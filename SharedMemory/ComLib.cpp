@@ -26,7 +26,6 @@ ComLib::Header CreateHeader(size_t type, size_t length /*incl null-T*/)
 	ComLib::Header header;
 	header.msgId = type;
 	header.msgLength = length;
-	header.msgSeq = 1; //Always 1, since it is not used.
 	return header;
 }
 
