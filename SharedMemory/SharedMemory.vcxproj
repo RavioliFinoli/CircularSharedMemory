@@ -115,6 +115,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ComLib.h" />
+    <ClInclude Include="SharedMemoryBuffer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ComLib.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="SharedMemoryBuffer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
