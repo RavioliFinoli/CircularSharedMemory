@@ -43,7 +43,6 @@ public:
 	struct Header
 	{
 		size_t msgId;
-		size_t msgSeq;
 		size_t msgLength;
 	};
 
